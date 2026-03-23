@@ -31,14 +31,14 @@ export const SongDisplay: React.FC<{ content: string }> = ({ content }) => {
   const parsedLines = parseChords(content);
 
   return (
-    <div className="font-mono text-lg leading-relaxed space-y-6">
+    <div className="font-mono text-lg leading-relaxed space-y-6 text-stone-800 dark:text-stone-200">
       {parsedLines.map((line, i) => (
         <div key={i} className="relative pt-6">
           <div className="absolute top-0 left-0 flex whitespace-pre">
             {line.chords.map((chord, idx) => (
               <span
                 key={idx}
-                className="text-blue-600 font-bold absolute"
+                className="text-blue-600 dark:text-blue-400 font-bold absolute"
                 style={{ left: `${idx}ch` }}
               >
                 {chord}
