@@ -1,4 +1,4 @@
-# ChordSync Deployment & Development Guide
+# MarineNajdiToto Deployment & Development Guide
 
 ## 🚀 Jak aplikaci nasadit (Deploy)
 

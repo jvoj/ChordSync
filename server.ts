@@ -3,6 +3,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import fs from "fs";
 
 async function startServer() {
   const app = express();
@@ -15,24 +16,12 @@ async function startServer() {
 
   const PORT = 3000;
 
+  // Load songs from file
+  const songsPath = path.join(process.cwd(), "songs.json");
+  let songs = JSON.parse(fs.readFileSync(songsPath, "utf-8"));
+
   // In-memory state
   const rooms: Record<string, { leaderId: string; songId: string | null; scrollPos: number; users: Record<string, string> }> = {};
-  const songs = [
-    {
-      id: "1",
-      title: "Na Ochoz je cesta",
-      author: "Tradiční",
-      content: "[G]Na Ochoz je [C]cesta, [D]jako žádná [G]ze sta.\n[G]Kdo po ní [C]půjde, [D]ten se neza[G]staví.",
-      rating: 4.5
-    },
-    {
-      id: "2",
-      title: "Stánky",
-      author: "Nedvědi",
-      content: "[G]U stánků [C]na levnou [G]krásu\n[G]postávaj [C]a smějou se [G]času\n[G]S cigaretou [C]uprostřed [G]noci\n[G]připadaj si [C]jako [G]otroci.",
-      rating: 5.0
-    }
-  ];
 
   app.use(express.json());
 
