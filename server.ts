@@ -14,11 +14,13 @@ async function startServer() {
     },
   });
 
-  const PORT = 3000;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
   // Load songs from file
   const songsPath = path.join(process.cwd(), "songs.json");
   let songs = JSON.parse(fs.readFileSync(songsPath, "utf-8"));
+
+  const saveSongs = () => fs.writeFileSync(songsPath, JSON.stringify(songs, null, 2), "utf-8");
 
   // In-memory state
   const rooms: Record<string, { leaderId: string; songId: string | null; scrollPos: number; users: Record<string, string> }> = {};
@@ -34,10 +36,25 @@ async function startServer() {
     const newSong = {
       id: Math.random().toString(36).substr(2, 9),
       ...req.body,
-      rating: 0
+      rating: 0,
+      ratingCount: 0,
+      playCount: 0,
     };
     songs.push(newSong);
+    saveSongs();
     res.json(newSong);
+  });
+
+  app.post("/api/songs/:id/rate", (req, res) => {
+    const song = songs.find((s: any) => s.id === req.params.id);
+    if (!song) return res.status(404).json({ error: "Not found" });
+    const value = Math.min(5, Math.max(1, Number(req.body.value)));
+    if (isNaN(value)) return res.status(400).json({ error: "Invalid rating" });
+    song.rating = Math.round(((song.rating * song.ratingCount + value) / (song.ratingCount + 1)) * 10) / 10;
+    song.ratingCount = (song.ratingCount || 0) + 1;
+    saveSongs();
+    io.emit("song-updated", { id: song.id, rating: song.rating, ratingCount: song.ratingCount, playCount: song.playCount });
+    res.json({ rating: song.rating, ratingCount: song.ratingCount });
   });
 
   app.get("/api/rooms", (req, res) => {
@@ -47,6 +64,15 @@ async function startServer() {
       songId: data.songId 
     })));
   });
+
+  // Helper to broadcast current rooms to all connected clients
+  const broadcastRooms = () => {
+    io.emit("rooms-update", Object.entries(rooms).map(([id, data]) => ({
+      id,
+      userCount: Object.keys(data.users).length,
+      songId: data.songId
+    })));
+  };
 
   // Socket.io logic
   io.on("connection", (socket) => {
@@ -65,6 +91,7 @@ async function startServer() {
       
       io.to(roomId).emit("room-users", rooms[roomId].users);
       socket.emit("room-state", rooms[roomId]);
+      broadcastRooms();
     });
 
     socket.on("become-leader", (roomId: string) => {
@@ -74,10 +101,25 @@ async function startServer() {
       }
     });
 
+    socket.on("rename-room", ({ oldRoomId, newRoomId }: { oldRoomId: string; newRoomId: string }) => {
+      if (!rooms[oldRoomId] || rooms[oldRoomId].leaderId !== socket.id) return;
+      if (newRoomId === oldRoomId || !newRoomId.trim()) return;
+      // Move room data to new key
+      rooms[newRoomId] = { ...rooms[oldRoomId] };
+      delete rooms[oldRoomId];
+      // Move all socket members to new room
+      io.in(oldRoomId).socketsJoin(newRoomId);
+      io.in(oldRoomId).socketsLeave(oldRoomId);
+      io.to(newRoomId).emit("room-renamed", { oldRoomId, newRoomId });
+      broadcastRooms();
+    });
+
     socket.on("sync-scroll", ({ roomId, scrollPos }: { roomId: string; scrollPos: number }) => {
       if (rooms[roomId] && rooms[roomId].leaderId === socket.id) {
         rooms[roomId].scrollPos = scrollPos;
         socket.to(roomId).emit("scroll-update", scrollPos);
+      } else {
+        console.log(`sync-scroll REJECTED: socket=${socket.id}, expected leader=${rooms[roomId]?.leaderId}`);
       }
     });
 
@@ -85,6 +127,15 @@ async function startServer() {
       if (rooms[roomId] && rooms[roomId].leaderId === socket.id) {
         rooms[roomId].songId = songId;
         socket.to(roomId).emit("song-update", songId);
+        console.log(`sync-song OK: songId=${songId} to room ${roomId}`);
+        const song = songs.find((s: any) => s.id === songId);
+        if (song) {
+          song.playCount = (song.playCount || 0) + 1;
+          saveSongs();
+          io.emit("song-updated", { id: song.id, rating: song.rating, ratingCount: song.ratingCount, playCount: song.playCount });
+        }
+      } else {
+        console.log(`sync-song REJECTED: socket=${socket.id}, expected leader=${rooms[roomId]?.leaderId}`);
       }
     });
 
@@ -105,6 +156,7 @@ async function startServer() {
               delete rooms[roomId];
             }
           }
+          broadcastRooms();
           break;
         }
       }

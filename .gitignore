@@ -6,3 +6,10 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Local song document folders (not for public repo)
+Kordy*/
+*.doc
+*.docx
+*.pdf
+zpěvník*

@@ -4,6 +4,8 @@ export interface Song {
   author: string;
   content: string;
   rating: number;
+  ratingCount: number;
+  playCount: number;
 }
 
 export interface Room {
