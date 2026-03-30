@@ -5,6 +5,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import socket from './services/socket';
 import { SongDisplay } from './components/SongDisplay';
+import { transposeContent, semitoneLabel } from './utils/transpose';
 import type { Song, Room } from './types';
 
 function cn(...inputs: ClassValue[]) {
@@ -47,6 +48,7 @@ export default function App() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  const [transpose, setTranspose] = useState(0);
   const [currentRoom, setCurrentRoom] = useState<string | null>(null);
   const [isLeader, setIsLeader] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -192,6 +194,7 @@ export default function App() {
 
   const handleSongSelect = (song: Song) => {
     setCurrentSong(song);
+    setTranspose(0);
     if (isLeader && currentRoom) {
       socket.emit('sync-song', { roomId: currentRoom, songId: song.id });
     }
@@ -550,6 +553,21 @@ export default function App() {
                     >+</button>
                   </div>
 
+                  {/* Transpose — only for leader or solo, hidden in fullscreen */}
+                  {!isFullscreen && (isLeader || !currentRoom) && (
+                    <div className="flex items-center gap-1 bg-stone-100 dark:bg-stone-800 rounded-full px-1" title="Transponovat">
+                      <button
+                        onClick={() => setTranspose(t => t - 1)}
+                        className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-stone-200 dark:hover:bg-stone-700 font-bold text-stone-600 dark:text-stone-300 text-lg leading-none"
+                      >♭</button>
+                      <span className="text-xs font-mono text-stone-400 w-6 text-center">{semitoneLabel(transpose)}</span>
+                      <button
+                        onClick={() => setTranspose(t => t + 1)}
+                        className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-stone-200 dark:hover:bg-stone-700 font-bold text-stone-600 dark:text-stone-300 text-lg leading-none"
+                      >♯</button>
+                    </div>
+                  )}
+
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <div className="relative">
                       <input 
@@ -604,7 +622,7 @@ export default function App() {
                   isFullscreen && "border-none shadow-none"
                 )}
               >
-                <SongDisplay content={currentSong.content} fontSize={fontSize} />
+                <SongDisplay content={transposeContent(currentSong.content, transpose)} fontSize={fontSize} />
                 <div className="h-96" /> {/* Spacer for scrolling */}
               </div>
             </motion.div>
