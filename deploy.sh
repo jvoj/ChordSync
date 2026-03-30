@@ -3,7 +3,7 @@ set -euo pipefail
 
 REMOTE_HOST="styxiInt"
 REMOTE_DIR="/home/jav/docker/ChordSync"
-GIT_REPO="git@github.com:jvoj/ChordSync.git"
+GIT_REPO="https://github.com/jvoj/ChordSync.git"
 CONTAINER_NAME="chordsync"
 IMAGE_NAME="chordsync"
 PORT=3000
