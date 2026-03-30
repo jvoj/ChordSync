@@ -295,7 +295,7 @@ export default function App() {
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
                 <Music size={18} />
               </div>
-              <h1 className="text-xl font-bold tracking-tight">MarineNajdiToto</h1>
+              <h1 className="text-xl font-bold tracking-tight">Kordy</h1>
             </div>
             
             <div className="flex items-center gap-4">
