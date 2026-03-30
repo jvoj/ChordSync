@@ -240,7 +240,8 @@ export default function App() {
   const filteredSongs = songs
     .filter(s =>
       s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.author.toLowerCase().includes(searchQuery.toLowerCase())
+      s.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.content.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .sort((a, b) => {
       if (sortBy === 'rating') return b.rating - a.rating;
