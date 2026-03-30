@@ -6,7 +6,6 @@ REMOTE_DIR="/home/jav/docker/ChordSync"
 GIT_REPO="https://github.com/jvoj/ChordSync.git"
 CONTAINER_NAME="chordsync"
 IMAGE_NAME="chordsync"
-PORT=3000
 
 echo "==> Pushing latest code to GitHub..."
 git add -A
@@ -37,14 +36,13 @@ docker stop $CONTAINER_NAME 2>/dev/null || true
 docker rm   $CONTAINER_NAME 2>/dev/null || true
 
 echo "  -> Starting new container..."
-docker run -d \\
-  --name $CONTAINER_NAME \\
-  --restart unless-stopped \\
-  -p $PORT:$PORT \\
-  -e VIRTUAL_HOST=voko.beer \\
-  -e VIRTUAL_PORT=$PORT \\
-  -e LETSENCRYPT_HOST=voko.beer \\
-  -e LETSENCRYPT_EMAIL=vojira@gmail.com \\
+docker run -d \
+  --name $CONTAINER_NAME \
+  --restart unless-stopped \
+  -e VIRTUAL_HOST=svachu.cz \
+  -e VIRTUAL_PORT=3000 \
+  -e LETSENCRYPT_HOST=svachu.cz \
+  -e LETSENCRYPT_EMAIL=vojirja@gmail.com \
   $IMAGE_NAME
 
 echo "  -> Container status:"
@@ -52,4 +50,4 @@ docker ps --filter "name=$CONTAINER_NAME" --format "  {{.Names}}  {{.Status}}  {
 EOF
 
 echo ""
-echo "✅ Deploy complete — https://voko.beer"
+echo "✅ Deploy complete — https://svachu.cz"
